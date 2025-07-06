@@ -85,11 +85,24 @@ const columns: TableColumn<Payment>[] = [
             />
         </div>
         <div class="col-sm-6">
-            Records from <strong>{{ pagination.pageIndex * pagination.pageSize + 1 }}</strong> to <strong>{{ pagination.pageIndex * pagination.pageSize + pagination.pageSize }}</strong> of <strong>{{ totalRows }}</strong> total records.
+            <div v-if="totalRows === 0">
+              No records found.
+            </div>
+            <div v-else>
+              Records from
+              <strong>{{ pagination.pageIndex * pagination.pageSize + 1 }}</strong>
+              to
+              <strong>
+                {{ Math.min(pagination.pageIndex * pagination.pageSize + pagination.pageSize, totalRows) }}
+              </strong>
+              of
+              <strong>{{ totalRows }}</strong>
+              total records.
+            </div>
         </div>
     </div>
 
-    <div class="flex justify-center border-t border-default pt-4">
+    <div class="flex justify-center border-t border-default pt-4" v-if="totalRows > 0">
       <UPagination
         :default-page="(pagination.pageIndex || 0) + 1"
         :items-per-page="pagination.pageSize"
@@ -108,10 +121,9 @@ const columns: TableColumn<Payment>[] = [
       class="flex-1"
     />
 
-
     <div v-if="loading" class="text-center">Loading...</div>
 
-    <div class="flex justify-center border-t border-default pt-4">
+    <div class="flex justify-center border-t border-default pt-4" v-if="totalRows > 0">
       <UPagination
         :default-page="(pagination.pageIndex || 0) + 1"
         :items-per-page="pagination.pageSize"
