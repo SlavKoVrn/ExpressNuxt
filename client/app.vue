@@ -13,6 +13,7 @@ type Payment = {
 const data = ref<Payment[]>([])
 const loading = ref(false)
 const totalRows = ref(0)
+const search = ref('')
 
 // Pagination state
 const pagination = ref({
@@ -27,10 +28,9 @@ const fetchData = async () => {
   const perPage = pagination.value.pageSize
 
   try {
-    const res = await fetch(`http://localhost:4000/items?page=${page}&per-page=${perPage}`)
+    const url = `http://localhost:4000/items?search=${encodeURIComponent(search.value)}&page=${page}&per-page=${perPage}`
+    const res = await fetch(url)
     const json = await res.json()
-
-    console.log(json.items)
 
     data.value = json.items || []
     totalRows.value = json.total || 0
@@ -42,8 +42,12 @@ const fetchData = async () => {
   }
 }
 
-// Watch for pagination changes and fetch new data
+// Watch for pagination or search changes and fetch new data
 watch(() => pagination.value, fetchData, { deep: true })
+watch(() => search.value, () => {
+  pagination.value.pageIndex = 0 // Reset to first page on search
+  fetchData()
+})
 
 onMounted(() => {
   fetchData()
@@ -64,9 +68,26 @@ const columns: TableColumn<Payment>[] = [
 </script>
 
 <template>
+<div class="container py-5">
   <div class="w-full space-y-4 pb-4">
 
     <div v-if="loading" class="text-center">Loading...</div>
+
+    <div class="row">
+        <div class="col-sm-6">
+            <!-- Search Input -->
+            <label for="search" class="mr-2 col-form-label-sm">Search:&nbsp;</label>
+            <UInput
+              v-model="search"
+              name="search"
+              placeholder="Search..."
+              class="max-w-md"
+            />
+        </div>
+        <div class="col-sm-6">
+            Records from <strong>{{ pagination.pageIndex * pagination.pageSize + 1 }}</strong> to <strong>{{ pagination.pageIndex * pagination.pageSize + pagination.pageSize }}</strong> of <strong>{{ totalRows }}</strong> total records.
+        </div>
+    </div>
 
     <div class="flex justify-center border-t border-default pt-4">
       <UPagination
@@ -87,6 +108,7 @@ const columns: TableColumn<Payment>[] = [
       class="flex-1"
     />
 
+
     <div v-if="loading" class="text-center">Loading...</div>
 
     <div class="flex justify-center border-t border-default pt-4">
@@ -98,9 +120,11 @@ const columns: TableColumn<Payment>[] = [
       />
     </div>
   </div>
+</div>
 </template>
 
 <style>
 @import "tailwindcss";
 @import "@nuxt/ui"; 
+.max-w-md {width:85%;}
 </style>
