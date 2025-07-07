@@ -3,14 +3,15 @@ import { getPaginationRowModel } from '@tanstack/vue-table'
 import type { TableColumn } from '@nuxt/ui'
 
 const table = useTemplateRef('table')
+const UCheckbox = resolveComponent('UCheckbox')
 
-type Payment = {
+type Item = {
   id: number
   text: string
 }
 
 // Reactive data and loading state
-const data = ref<Payment[]>([])
+const data = ref<Item[]>([])
 const loading = ref(false)
 const totalRows = ref(0)
 const search = ref('')
@@ -20,6 +21,8 @@ const pagination = ref({
   pageIndex: 0,
   pageSize: 20
 })
+
+const rowSelection = ref([])
 
 // Fetch data from server
 const fetchData = async () => {
@@ -53,8 +56,28 @@ onMounted(() => {
   fetchData()
 })
 
-// Columns definition remains unchanged
-const columns: TableColumn<Payment>[] = [
+// Columns definition
+const columns: TableColumn<Item>[] = [
+  {
+    id: 'select',
+    header: ({ table }) =>
+      h(UCheckbox, {
+        modelValue: table.getIsSomePageRowsSelected()
+          ? 'indeterminate'
+          : table.getIsAllPageRowsSelected(),
+        'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
+          table.toggleAllPageRowsSelected(!!value),
+        'aria-label': 'Select all'
+      }),
+    cell: ({ row }) =>
+      h(UCheckbox, {
+        modelValue: rowSelection.value[row.getValue('id')],
+        'onUpdate:modelValue': (value: boolean) => {
+          rowSelection.value[row.getValue('id')] = value
+        },
+        'aria-label': 'Select row'
+      })
+  },
   {
     accessorKey: 'id',
     header: 'Id',
@@ -113,7 +136,7 @@ const columns: TableColumn<Payment>[] = [
 
     <UTable
       ref="table"
-      v-model:pagination="pagination"
+      v-model:row-selection="rowSelection"
       :data="data"
       :columns="columns"
       :loading="loading"
