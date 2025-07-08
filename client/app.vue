@@ -31,12 +31,16 @@ const fetchData = async () => {
   const perPage = pagination.value.pageSize
 
   try {
-    const url = `http://localhost:4000/items?search=${encodeURIComponent(search.value)}&page=${page}&per-page=${perPage}`
-    const res = await fetch(url)
-    const json = await res.json()
+    const response = await $fetch('http://localhost:4000/items', {
+      params: {
+        search: search.value,
+        page,
+        'per-page': perPage
+      }
+    })
 
-    data.value = json.items || []
-    totalRows.value = json.total || 0
+    data.value = response.items || []
+    totalRows.value = response.total || 0
   } catch (error) {
     console.error('Error fetching data:', error)
     data.value = []
