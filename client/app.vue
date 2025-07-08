@@ -15,6 +15,7 @@ const data = ref<Item[]>([])
 const loading = ref(false)
 const totalRows = ref(0)
 const search = ref('')
+const currentPage = ref(1)
 
 // Pagination state
 const pagination = ref({
@@ -52,6 +53,7 @@ const fetchData = async () => {
 // Watch for pagination or search changes and fetch new data
 watch(() => pagination.value, fetchData, { deep: true })
 watch(() => search.value, () => {
+  currentPage.value = 1
   pagination.value.pageIndex = 0 // Reset to first page on search
   fetchData()
 })
@@ -131,7 +133,7 @@ const columns: TableColumn<Item>[] = [
 
     <div class="flex justify-center border-t border-default pt-4" v-if="totalRows > 0">
       <UPagination
-        :default-page="(pagination.pageIndex || 0) + 1"
+        v-model:page="currentPage"
         :items-per-page="pagination.pageSize"
         :total="totalRows"
         @update:page="(p) => pagination.pageIndex = p - 1"
@@ -152,7 +154,7 @@ const columns: TableColumn<Item>[] = [
 
     <div class="flex justify-center border-t border-default pt-4" v-if="totalRows > 0">
       <UPagination
-        :default-page="(pagination.pageIndex || 0) + 1"
+        v-model:page="currentPage"
         :items-per-page="pagination.pageSize"
         :total="totalRows"
         @update:page="(p) => pagination.pageIndex = p - 1"
