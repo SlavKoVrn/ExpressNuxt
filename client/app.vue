@@ -4,10 +4,13 @@ import type { TableColumn } from '@nuxt/ui'
 
 const table = useTemplateRef('table')
 const UCheckbox = resolveComponent('UCheckbox')
+const UDropdownMenu = resolveComponent('UDropdownMenu')
+const UButton = resolveComponent('UButton')
 
 type Item = {
   id: number
   text: string
+  order: number
 }
 
 // Reactive data and loading state
@@ -80,6 +83,61 @@ const getHeaderCheckboxState = (table: ReturnType<typeof useVueTable>) => {
   return false
 }
 
+function getHeader(column: Column<Item>, label: string) {
+  const isSorted = column.getIsSorted()
+
+  return h(
+    UDropdownMenu,
+    {
+      content: {
+        align: 'start'
+      },
+      'aria-label': 'Actions dropdown',
+      items: [
+        {
+          label: 'Asc',
+          type: 'checkbox',
+          icon: 'i-lucide-arrow-up-narrow-wide',
+          checked: isSorted === 'asc',
+          onSelect: () => {
+            if (isSorted === 'asc') {
+              column.clearSorting()
+            } else {
+              column.toggleSorting(false)
+            }
+          }
+        },
+        {
+          label: 'Desc',
+          icon: 'i-lucide-arrow-down-wide-narrow',
+          type: 'checkbox',
+          checked: isSorted === 'desc',
+          onSelect: () => {
+            if (isSorted === 'desc') {
+              column.clearSorting()
+            } else {
+              column.toggleSorting(true)
+            }
+          }
+        }
+      ]
+    },
+    () =>
+      h(UButton, {
+        color: 'neutral',
+        variant: 'ghost',
+        label,
+        icon: isSorted
+          ? isSorted === 'asc'
+            ? 'i-lucide-arrow-up-narrow-wide'
+            : 'i-lucide-arrow-down-wide-narrow'
+          : 'i-lucide-arrow-up-down',
+        class: '-mx-2.5 data-[state=open]:bg-elevated',
+        'aria-label': `Sort by ${isSorted === 'asc' ? 'descending' : 'ascending'}`
+      })
+  )
+}
+
 // Columns definition
 const columns: TableColumn<Item>[] = [
   {
@@ -118,14 +176,26 @@ const columns: TableColumn<Item>[] = [
   },
   {
     accessorKey: 'id',
-    header: 'Id',
+    header: ({ column }) => getHeader(column, 'Id'),
     cell: ({ row }) => `#${row.getValue('id')}`
   },
   {
     accessorKey: 'text',
-    header: 'Text'
+    header: ({ column }) => getHeader(column, 'Text'),
+  },
+  {
+    accessorKey: 'order',
+    header: ({ column }) => getHeader(column, 'Order'),
+    cell: ({ row }) => `#${row.getValue('order')}`
   },
 ]
+
+const sorting = ref([
+  {
+    id: 'id',
+    desc: false
+  }
+])
 </script>
 
 <template>
@@ -175,6 +245,7 @@ const columns: TableColumn<Item>[] = [
     <UTable
       ref="table"
       v-model:row-selection="rowSelection"
+      v-model:sorting="sorting"
       :data="data"
       :columns="columns"
       :loading="loading"
