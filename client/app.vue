@@ -200,4 +200,7 @@ const columns: TableColumn<Item>[] = [
 @import "tailwindcss";
 @import "@nuxt/ui"; 
 .max-w-md {width:85%;}
+th:has([role=checkbox]) {
+  width: 50px;
+}
 </style>
