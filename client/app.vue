@@ -62,19 +62,51 @@ onMounted(() => {
   fetchData()
 })
 
+
+const getHeaderCheckboxState = (table: ReturnType<typeof useVueTable>) => {
+  const currentPageRows = table.getRowModel().rows
+  if (currentPageRows.length === 0) return false
+
+  const allSelected = currentPageRows.every(
+    row => rowSelection.value[row.original.id] === true
+  )
+
+  const someSelected = currentPageRows.some(
+    row => rowSelection.value[row.original.id] === true
+  )
+
+  if (allSelected) return true
+  if (someSelected) return 'indeterminate'
+  return false
+}
+
 // Columns definition
 const columns: TableColumn<Item>[] = [
   {
     id: 'select',
-    header: ({ table }) =>
-      h(UCheckbox, {
-        modelValue: table.getIsSomePageRowsSelected()
-          ? 'indeterminate'
-          : table.getIsAllPageRowsSelected(),
-        'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
-          table.toggleAllPageRowsSelected(!!value),
+    header: ({ table }) => {
+      const state = getHeaderCheckboxState(table)
+      return h(UCheckbox, {
+        modelValue: state,
+        'onUpdate:modelValue': (value: boolean) => {
+          const currentPageIds = table.getRowModel().rows.map(row => row.original.id)
+          if (value === true) {
+            // Select all on current page
+            currentPageIds.forEach(id => {
+              rowSelection.value[id] = true
+            })
+          } else {
+            // Deselect all on current page
+            currentPageIds.forEach(id => {
+              delete rowSelection.value[id]
+              // or set to false if you prefer:
+              // rowSelection.value[id] = false
+            })
+          }
+        },
         'aria-label': 'Select all'
-      }),
+      })
+    },
     cell: ({ row }) =>
       h(UCheckbox, {
         modelValue: rowSelection.value[row.getValue('id')],
