@@ -13,33 +13,37 @@ type Item = {
   order: number
 }
 
-// Reactive data and loading state
 const data = ref<Item[]>([])
 const loading = ref(false)
 const totalRows = ref(0)
 const search = ref('')
 const currentPage = ref(1)
-
-// Pagination state
 const pagination = ref({
   pageIndex: 0,
   pageSize: 20
 })
-
 const rowSelection = ref([])
+const sorting = ref([
+  {
+    id: 'id',
+    desc: false
+  }
+])
 
 // Fetch data from server
 const fetchData = async () => {
   loading.value = true
   const page = pagination.value.pageIndex + 1 // Server uses 1-based index
   const perPage = pagination.value.pageSize
+  const sortParam = (sorting.value[0].desc ? `-` : ``) + sorting.value[0].id
 
   try {
     const response = await $fetch('http://localhost:4000/items', {
       params: {
         search: search.value,
         page,
-        'per-page': perPage
+        'per-page': perPage,
+        'sort': sortParam
       }
     })
 
@@ -60,6 +64,9 @@ watch(() => search.value, () => {
   pagination.value.pageIndex = 0 // Reset to first page on search
   fetchData()
 })
+watch(sorting, () => {
+  fetchData()
+}, { deep: true })
 
 onMounted(() => {
   fetchData()
@@ -189,13 +196,6 @@ const columns: TableColumn<Item>[] = [
     cell: ({ row }) => `#${row.getValue('order')}`
   },
 ]
-
-const sorting = ref([
-  {
-    id: 'id',
-    desc: false
-  }
-])
 </script>
 
 <template>

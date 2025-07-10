@@ -23,12 +23,27 @@ app.use((req, res, next) => {
 });
 
 app.get('/items', (req, res) => {
-  const { search = '', page = 1, 'per-page': perPage = 20 } = req.query;
+  const { search = '', page = 1, 'per-page': perPage = 20, 'sort': sorting = 'id' } = req.query;
 
   let data = generateItems();
   if (search) {
     data = data.filter(item => item.text.includes(search));
   }
+
+  const [sortField, sortOrder] = sorting.startsWith('-') 
+    ? [sorting.slice(1), -1] 
+    : [sorting, 1];
+
+  data.sort((a, b) => {
+    const valA = a[sortField];
+    const valB = b[sortField];
+
+    if (typeof valA === 'string' && typeof valB === 'string') {
+      return sortOrder * valA.localeCompare(valB); // String comparison
+    }
+
+    return sortOrder * (valA - valB); // Numeric comparison
+  });
 
   const total = data.length;
   const start = (Number(page) - 1) * Number(perPage);
@@ -39,7 +54,8 @@ app.get('/items', (req, res) => {
     items: result,
     total,
     page: Number(page),
-    perPage: Number(perPage)
+    perPage: Number(perPage),
+    sort: sorting
   });
 });
 
